@@ -68,6 +68,7 @@ public class ApiConnector {
         AllSymbolsResponse allSymbolsResponse = APICommandFactory.executeAllSymbolsCommand(connector);
         Set<SymbolRecord> symbolRecords = allSymbolsResponse.getSymbolRecords()
             .stream()
+            .filter(p -> !p.isLongOnly())
             .collect(Collectors.toSet());
         ChartRangeCommand chartRangeCommand = new ChartRangeCommand(connector);
 
