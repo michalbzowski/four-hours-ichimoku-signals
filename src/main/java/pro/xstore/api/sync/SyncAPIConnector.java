@@ -186,7 +186,7 @@ public class SyncAPIConnector extends StreamingConnector {
         String js = cmd.toJSONString();
         String result = this.executeCommandNoTimeout(js);
         if (result.isEmpty()) {
-            throw new APICommunicationException("Server not responding");
+            throw new APICommunicationException(String.format("Server not responding on %s command", cmdName));
         }
 
         Calendar cal = Calendar.getInstance();

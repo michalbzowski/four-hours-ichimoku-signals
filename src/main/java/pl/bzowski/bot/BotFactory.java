@@ -9,6 +9,7 @@ import pl.bzowski.bot.trend.TrendChecker;
 import pl.bzowski.candles.CandlesFacade;
 import pl.bzowski.signals.SignalsFacade;
 import pl.bzowski.trading.SeriesService;
+import pl.bzowski.xtb.XStationFacade;
 import pro.xstore.api.message.codes.PERIOD_CODE;
 import pro.xstore.api.message.error.APICommandConstructionException;
 import pro.xstore.api.message.error.APICommunicationException;
@@ -29,16 +30,16 @@ public class BotFactory {
         private Logger LOG = Logger.getLogger(BotFactory.class);
 
         private final SeriesService seriesService;
-        private final ChartRangeCommand chartRangeCommand;
+        private final XStationFacade xStationFacade;
         private final TrendChecker trendChecker;
 
         private ActualTrendsFacade actualTrendsFacade;
         private CandlesFacade candlesFacade;
         private SignalsFacade signalsFacade;
 
-        public BotFactory(SeriesService seriesService, ChartRangeCommand chartRangeCommand, ActualTrendsFacade actualTrendsFacade, CandlesFacade candlesFacade, SignalsFacade signalsFacade) {
+        public BotFactory(SeriesService seriesService, XStationFacade xStationFacade, ActualTrendsFacade actualTrendsFacade, CandlesFacade candlesFacade, SignalsFacade signalsFacade) {
                 this.seriesService = seriesService;
-                this.chartRangeCommand = chartRangeCommand;
+                this.xStationFacade = xStationFacade;
                 this.actualTrendsFacade = actualTrendsFacade;
                 this.candlesFacade = candlesFacade;
                 this.signalsFacade = signalsFacade;
@@ -86,6 +87,6 @@ public class BotFactory {
         
                 ChartRangeInfoRecord record = new ChartRangeInfoRecord(symbol, periodCode, fromTime, NOW);
                 //
-                return chartRangeCommand.execute(record);
+                return xStationFacade.chartRange(record);
         }
 }

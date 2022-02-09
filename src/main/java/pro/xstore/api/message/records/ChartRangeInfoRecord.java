@@ -40,6 +40,22 @@ public class ChartRangeInfoRecord {
         return obj;
     }
 
+    public String getSymbol() {
+      return symbol;
+    }
+
+    public PERIOD_CODE getPeriod() {
+      return period;
+    }
+
+    public long getStart() {
+      return start;
+    }
+
+    public long getEnd() {
+      return end;
+    }
+
     @Override
     public String toString() {
         return "ChartRangeInfoRecord{" + "symbol=" + symbol + ", period=" + period + ", start=" + start + ", end=" + end + ", ticks=" + ticks + '}';

@@ -9,8 +9,12 @@ import org.ta4j.core.TradingRecord;
 import io.undertow.websockets.util.ContextSetupHandler.Action;
 import pl.bzowski.actualtrends.ActualTrendsFacade;
 import pl.bzowski.bot.strategies.StrategyWithIndicators;
+import pl.bzowski.bot.strategies.ichimoku.NeutralBaseLineCrossStrategy;
 import pl.bzowski.bot.strategies.ichimoku.NeutralTenkanKinjunCrossStrategy;
+import pl.bzowski.bot.strategies.ichimoku.StrongBaseLineCrossStrategy;
+import pl.bzowski.bot.strategies.ichimoku.StrongPriceCloudBreakoutStrategy;
 import pl.bzowski.bot.strategies.ichimoku.StrongTenkanKinjunCrossStrategy;
+import pl.bzowski.bot.strategies.ichimoku.WeakBaseLineCrossStrategy;
 import pl.bzowski.bot.strategies.ichimoku.WeakTenkanKinjunCrossStrategy;
 import pl.bzowski.bot.trend.Trend;
 import pl.bzowski.bot.trend.TrendChecker;
@@ -46,6 +50,16 @@ public class IchimokuTrendAndSignalBot {
         strategies.add(new NeutralTenkanKinjunCrossStrategy(symbol).getShortStrategy(series));
         strategies.add(new WeakTenkanKinjunCrossStrategy(symbol).getLongStrategy(series));
         strategies.add(new WeakTenkanKinjunCrossStrategy(symbol).getShortStrategy(series));
+
+        strategies.add(new StrongBaseLineCrossStrategy(symbol).getLongStrategy(series));
+        strategies.add(new StrongBaseLineCrossStrategy(symbol).getShortStrategy(series));
+        strategies.add(new NeutralBaseLineCrossStrategy(symbol).getLongStrategy(series));
+        strategies.add(new NeutralBaseLineCrossStrategy(symbol).getShortStrategy(series));
+        strategies.add(new WeakBaseLineCrossStrategy(symbol).getLongStrategy(series));
+        strategies.add(new WeakBaseLineCrossStrategy(symbol).getShortStrategy(series));
+
+        strategies.add(new StrongPriceCloudBreakoutStrategy(symbol).getLongStrategy(series)); //Na razie tylko jedno, bo nie wiem jak poloczyc or'em rozne wskazniki
+        strategies.add(new StrongPriceCloudBreakoutStrategy(symbol).getShortStrategy(series));//Jak sobie sciagne jakies dane do testow to sobie napisze testy :D a moze to dobra okazja?
     }
 
     public void onTick(int endIndex, SCandleRecord candleRecord) {

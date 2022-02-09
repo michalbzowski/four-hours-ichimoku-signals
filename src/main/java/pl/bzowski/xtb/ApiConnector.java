@@ -31,7 +31,7 @@ import pro.xstore.api.message.records.SymbolRecord;
 import pro.xstore.api.message.response.APIErrorResponse;
 import pro.xstore.api.message.response.AllSymbolsResponse;
 import pro.xstore.api.message.response.LoginResponse;
-import pro.xstore.api.sync.Credentials;
+
 import pro.xstore.api.sync.SyncAPIConnector;
 import pro.xstore.api.sync.ServerData.ServerEnum;
 
@@ -43,94 +43,61 @@ public class ApiConnector {
   private final Map<String, IchimokuTrendAndSignalBot> bots = new HashMap<>();
 
   private final SeriesService seriesService;
-  private SyncAPIConnector connector;
 
   private ActualTrendsFacade actualTrendsFacade;
   private CandlesFacade candlesFacade;
   private SignalsFacade signalsFacade;
-  private Credentials credentials;
+  private XStationFacade xStationFacade;
 
   @Inject
-  public ApiConnector(SeriesService seriesService, ActualTrendsFacade actualTrendsFacade, CandlesFacade candlesFacade, SignalsFacade signalsFacade, Credentials credentials) {
+  public ApiConnector(SeriesService seriesService, ActualTrendsFacade actualTrendsFacade, CandlesFacade candlesFacade,
+      SignalsFacade signalsFacade, XStationFacade xStationFacade) {
     this.seriesService = seriesService;
     this.actualTrendsFacade = actualTrendsFacade;
     this.candlesFacade = candlesFacade;
     this.signalsFacade = signalsFacade;
-    this.credentials = credentials;
+    this.xStationFacade = xStationFacade;
+
   }
 
   @PostConstruct
   void init() {
-    try {
-      this.connector = new SyncAPIConnector(ServerEnum.DEMO);
-      LoginResponse loginResponse = APICommandFactory.executeLoginCommand(connector, credentials);
-      if (loginResponse.getStatus()) {
-        AllSymbolsResponse allSymbolsResponse = APICommandFactory.executeAllSymbolsCommand(connector);
-        Set<SymbolRecord> symbolRecords = allSymbolsResponse.getSymbolRecords()
-            .stream()
-            .filter(p -> !p.isLongOnly())
-            .collect(Collectors.toSet());
-        ChartRangeCommand chartRangeCommand = new ChartRangeCommand(connector);
 
-        BotFactory botFactory = new BotFactory(seriesService, chartRangeCommand, actualTrendsFacade, candlesFacade,
-            signalsFacade);
+    AllSymbolsResponse allSymbolsResponse = xStationFacade.allSymbols();
 
-        int i = 0;
-        for (SymbolRecord symbolRecord : symbolRecords) {
-          IchimokuTrendAndSignalBot botInstance = botFactory.createBotInstance(symbolRecord);
-          bots.put(symbolRecord.getSymbol(), botInstance);
-          LOG.info(String.format("%s of %s", ++i, symbolRecords.size()));
-          logMemoryUsage();
-        }
-      }
-    } catch (IOException | APICommandConstructionException | APICommunicationException | APIReplyParseException
-        | APIErrorResponse e) {
-      LOG.error(e.getMessage());
+    Set<SymbolRecord> symbolRecords = allSymbolsResponse.getSymbolRecords()
+        .stream()
+        .filter(p -> !p.isLongOnly() && p.isCurrencyPair())
+        .collect(Collectors.toSet());
+
+    BotFactory botFactory = new BotFactory(seriesService, xStationFacade, actualTrendsFacade, candlesFacade,
+        signalsFacade);
+
+    int i = 0;
+    for (SymbolRecord symbolRecord : symbolRecords) {
+      IchimokuTrendAndSignalBot botInstance = botFactory.createBotInstance(symbolRecord);
+      bots.put(symbolRecord.getSymbol(), botInstance);
+      LOG.info(String.format("%s of %s", ++i, symbolRecords.size()));
+      logMemoryUsage();
     }
 
     TradeBotStreamListener tradeBotStreamListener = new TradeBotStreamListener(bots, seriesService);
-    try {
-      connector.connectStream(tradeBotStreamListener);
-      connector.subscribeKeepAlive();
-      bots.forEach((key, value) -> {
-        try {
-          connector.subscribeCandle(key);
-        } catch (APICommunicationException e) {
-          LOG.error(e.getLocalizedMessage());
-        }
-      });
-    } catch (IOException | APICommunicationException e) {
-      LOG.error(e.getLocalizedMessage());
-    }
+    xStationFacade.connect(bots, tradeBotStreamListener);
   }
 
   @Scheduled(every = "5m")
   public void pingXtb() {
     try {
-      APICommandFactory.executePingCommand(connector);
+      xStationFacade.ping();
       LOG.info("Ping!");
-		} catch (Exception e) {
-			LOG.warn(e.getLocalizedMessage());
-		}
+    } catch (Exception e) {
+      LOG.warn(e.getLocalizedMessage());
+    }
   }
 
   @PreDestroy
   void destroy() {
-    try {
-      bots.keySet().forEach(symbol -> {
-        try {
-          connector.unsubscribeCandle(symbol);
-          connector.unsubscribeKeepAlive();
-          connector.disconnectStream();
-        } catch (APICommunicationException e) {
-          e.printStackTrace();
-        }
-      });
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    } finally {
-      connector.disconnectStream();
-    }
+    xStationFacade.destroy(bots);
   }
 
   private void logMemoryUsage() {
