@@ -5,7 +5,11 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -87,9 +91,25 @@ public class SignalsReport {
         Collection<Signal> shouldEnter = signals.stream().filter(Signal::getShouldEnter).collect(Collectors.toUnmodifiableList());
         Collection<Signal> shouldExit = signals.stream().filter(Signal::getShouldExit).collect(Collectors.toUnmodifiableList());
         sb.append("<p>You can enter</p>");
+        
+        Map<String, List<String>> grouped = new HashMap<>();
+        shouldEnter.stream().forEach(signal -> {
+          grouped.putIfAbsent(signal.getSignalType(), new ArrayList<>());
+          grouped.computeIfPresent(signal.getSignalType(), (k, v) -> {
+            v.add(signal.getSymbol());
+            return v;
+
+          });
+        });
+  
         sb.append("<ol>");
-        for(Signal s : shouldEnter) {
-          sb.append(String.format("<li>Symbol: %s. Signal type: %s</li>", s.getSymbol(), s.getSignalType()));
+        for(String signalType : grouped.keySet()) {
+          sb.append(String.format("<li><b>%s</b></li>", signalType));
+          sb.append("<ol>");
+          for(String symbol : grouped.get(signalType)) {
+            sb.append(String.format("<li>%s</li>", symbol));
+          }
+          sb.append("</ol>");
         }
         sb.append("</ol>");
         sb.append("<p>You should exit</p>");
