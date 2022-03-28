@@ -62,8 +62,8 @@ public class StrongPriceCloudBreakoutStrategy implements StrategyBuilder {
       IchimokuSenkouSpanAIndicator spanA = new IchimokuSenkouSpanAIndicator(series);
       IchimokuSenkouSpanBIndicator spanB = new IchimokuSenkouSpanBIndicator(series);
 
-      Rule priceBreakUpSpanA = new CrossedDownIndicatorRule(cpi, spanA).and(new OverIndicatorRule(spanA, spanB));
-      Rule priceBreakUpSpanB = new CrossedDownIndicatorRule(cpi, spanB).and(new OverIndicatorRule(spanB, spanA));
+      Rule priceBreakUpSpanA = new CrossedDownIndicatorRule(cpi, spanA).and(new UnderIndicatorRule(spanA, spanB));
+      Rule priceBreakUpSpanB = new CrossedDownIndicatorRule(cpi, spanB).and(new UnderIndicatorRule(spanB, spanA));
       Rule enterRule = priceBreakUpSpanA.or(priceBreakUpSpanB);
       Rule exitRule = new CrossedUpIndicatorRule(cpi, spanA).or(new CrossedUpIndicatorRule(cpi, spanB));
 
